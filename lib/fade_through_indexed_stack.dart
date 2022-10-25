@@ -17,37 +17,57 @@ class FadeThroughIndexedStack extends StatefulWidget {
 }
 
 class _FadeThroughIndexedStackState extends State<FadeThroughIndexedStack>
-    with SingleTickerProviderStateMixin {
-  static const Duration _duration = Duration(milliseconds: 150);
+    with TickerProviderStateMixin {
+  static const Duration _duration = Duration(milliseconds: 250);
   late final AnimationController controller;
+  late final AnimationController secondaryController;
   late final Animation<double> animation;
   late final Animation<double> secondaryAnimation;
 
   int _currentIndex = 0;
 
+  Future<void> transition() async {
+    controller.value = 1;
+    secondaryController.forward(from: 0);
+
+    await Future.delayed(const Duration(milliseconds: 50));
+    setState(() {
+      _currentIndex = widget.index;
+    });
+
+    secondaryController.value = 0;
+    controller.forward(from: 0);
+  }
+
   @override
   void didUpdateWidget(FadeThroughIndexedStack oldWidget) {
     super.didUpdateWidget(oldWidget);
-    controller.forward().then((_) {
-      setState(() {
-        _currentIndex = widget.index;
-      });
-      controller.reverse();
-    });
+    if (widget.index != oldWidget.index) {
+      transition();
+    }
   }
 
   @override
   void initState() {
     super.initState();
     controller = AnimationController(vsync: this, duration: _duration);
+    secondaryController = AnimationController(vsync: this, duration: _duration);
+    controller.value = 1;
 
-    animation = Tween(begin: 1.0, end: 0.0).animate(controller);
-    secondaryAnimation = Tween(begin: 0.0, end: 1.0).animate(controller);
+    animation = Tween(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(controller);
+    secondaryAnimation = Tween(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(secondaryController);
   }
 
   @override
   void dispose() {
     controller.dispose();
+    secondaryController.dispose();
     super.dispose();
   }
 
